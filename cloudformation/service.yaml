@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: deploys a docker container within a previously created VPC. requires a running network stack
+
+Parameters:
+  
+  NetworkStackName:
+    Type: String
+    Description: name of the networks stack to put this resource in
+    
+  ServiceName:
+    Type: String
+    Description: human readable name of the service
+  
+  ImageUrl:
+    Type: String
+    Description: url of the docker image that will handle incoming traffic
+  
+  ContainerPort:
+    Type: Number
+    Description: port number inside the container to bind to
+    Default: 80
+  
+  ContainerCpu:
+    Type: Number
+    Description: how much cpu for the container. 1024 is 1 CPU
+    Default: 256
+
+  ContainerMemory:
+    Type: Number
+    Description: how much memory for the container
+    Default: 512
+  
+  DesiredCount:
+    Type: Number
+    Description: how many instances of this service task to run
+    Default: 1
+
+Resources:
+  
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref 'ServiceName'
+      RetentionInDays: 1
+      
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref 'ServiceName'
+      Cpu: !Ref 'ContainerCpu'
+      Memory: !Ref 'ContainerMemory'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn:
+        Fn::ImportValue:
+          !Join [ ':', [ !Ref 'NetworkStackName', 'ECSTaskExecutionRole' ]]
+      ContainerDefinitions:
+        - Name: !Ref 'ServiceName'
+          Cpu: !Ref 'ContainerCpu'
+          Memory: !Ref 'ContainerMemory'
+          Image: !Ref 'ImageUrl'
+          PortMappings:
+            - ContainerPort: !Ref 'ContainerPort'
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Ref 'ServiceName'
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+              
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref 'ServiceName'
+      Cluster:
+        Fn::ImportValue:
+          !Join [ ':', [ !Ref 'NetworkStackName', 'ClusterName' ]]
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      DesiredCount: !Ref 'DesiredCount'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Join [ ':', [!Ref 'NetworkStackName', 'ECSSecurityGroup' ]]
+          Subnets:
+            - Fn::ImportValue:
+                !Join [ ':', [!Ref 'NetworkStackName', 'PublicSubnet' ]]
+      TaskDefinition: !Ref 'TaskDefinition'

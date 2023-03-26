@@ -1,0 +1,22 @@
+{
+  "name": "hello-cdk",
+  "version": "1.0.0",
+  "private": true,
+  
+  "scripts": {
+    "repository:deploy": "cdk deploy --profile stratospheric --app \"mvn -e -q compile exec:java -Dexec.mainClass=dev.rsandtner.stratospheric.DockerRepositoryApp\"",
+    "repository:destroy": "cdk destroy --profile stratospheric --app \"mvn -e -q compile exec:java -Dexec.mainClass=dev.rsandtner.stratospheric.DockerRepositoryApp\"",
+    "network:deploy": "cdk deploy --profile stratospheric --app \"mvn -e -q compile exec:java -Dexec.mainClass=dev.rsandtner.stratospheric.NetworkApp\"",
+    "network:destroy": "cdk destroy --profile stratospheric --app \"mvn -e -q compile exec:java -Dexec.mainClass=dev.rsandtner.stratospheric.NetworkApp\"",
+    "service:deploy": "cdk deploy --profile stratospheric --app \"mvn -e -q compile exec:java -Dexec.mainClass=dev.rsandtner.stratospheric.ServiceApp\"",
+    "service:destroy": "cdk destroy --profile stratospheric --app \"mvn -e -q compile exec:java -Dexec.mainClass=dev.rsandtner.stratospheric.ServiceApp\""
+  },
+  
+  "devDependencies": {
+    "aws-cdk": "^2.70.0"
+  },
+  
+  "engines": {
+    "node": ">=16"
+  }
+}
